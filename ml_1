@@ -1,0 +1,155 @@
+import pandas as pd
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+# ==========================================
+# 1. Load the Dataset
+# ==========================================
+input_path = r"C:\Users\staff\Downloads\loanData (1).csv"
+data = pd.read_csv(input_path)
+
+# ==========================================
+# 2. Explore the Dataset
+# ==========================================
+print("First Five Records:")
+print(data.head())
+
+print("\nDataset Information:")
+data.info()
+
+print("\nDataset Shape:")
+print(data.shape)
+
+print("\nSummary Statistics:")
+print(data.describe())
+
+print("\nMissing Values:")
+print(data.isnull().sum())
+
+# ==========================================
+# 3. Handle Missing Numerical Values
+# ==========================================
+num_cols = [
+    'LoanAmount',
+    'Loan_Amount_Term',
+    'Credit_History'
+]
+
+# Select only numerical columns that exist in the dataset
+num_cols = [col for col in num_cols if col in data.columns]
+
+num_imputer = SimpleImputer(strategy='median')
+data[num_cols] = num_imputer.fit_transform(data[num_cols])
+
+# ==========================================
+# 4. Handle Missing Categorical Values
+# ==========================================
+cat_cols = [
+    'Gender',
+    'Married',
+    'Dependents',
+    'Self_Employed'
+]
+
+# Select only categorical columns that exist
+cat_cols = [col for col in cat_cols if col in data.columns]
+
+cat_imputer = SimpleImputer(strategy='most_frequent')
+data[cat_cols] = cat_imputer.fit_transform(data[cat_cols])
+
+# Handle any remaining missing values in other columns
+remaining_missing = data.columns[data.isnull().any()].tolist()
+
+for col in remaining_missing:
+    if pd.api.types.is_numeric_dtype(data[col]):
+        data[col] = data[col].fillna(data[col].median())
+    else:
+        mode_values = data[col].mode()
+        if not mode_values.empty:
+            data[col] = data[col].fillna(mode_values.iloc[0])
+
+print("\nMissing Values After Imputation:")
+print(data.isnull().sum())
+
+# ==========================================
+# 5. Remove Unnecessary Columns
+# ==========================================
+if 'Loan_ID' in data.columns:
+    data.drop('Loan_ID', axis=1, inplace=True)
+
+# ==========================================
+# 6. Encode Categorical Columns
+# ==========================================
+categorical_columns = [
+    'Gender',
+    'Married',
+    'Dependents',
+    'Education',
+    'Self_Employed',
+    'Property_Area',
+    'Loan_Status'
+]
+
+# Store encoders for reference
+label_encoders = {}
+
+for column in categorical_columns:
+    if column in data.columns:
+        encoder = LabelEncoder()
+        data[column] = encoder.fit_transform(
+            data[column].astype(str)
+        )
+        label_encoders[column] = encoder
+
+print("\nDataset After Encoding:")
+print(data.head())
+
+# ==========================================
+# 7. Scale Numerical Columns
+# ==========================================
+numerical_columns = [
+    'ApplicantIncome',
+    'CoapplicantIncome',
+    'LoanAmount',
+    'Loan_Amount_Term',
+    'Credit_History'
+]
+
+numerical_columns = [
+    col for col in numerical_columns
+    if col in data.columns
+]
+
+scaler = StandardScaler()
+
+data[numerical_columns] = scaler.fit_transform(
+    data[numerical_columns]
+)
+
+print("\nDataset After Scaling:")
+print(data.head())
+
+# ==========================================
+# 8. Display Final Dataset Information
+# ==========================================
+print("\nFinal Dataset Information:")
+data.info()
+
+print("\nFirst Five Rows of Processed Dataset:")
+print(data.head())
+
+print("\nRemaining Missing Values:")
+print(data.isnull().sum())
+
+# ==========================================
+# 9. Save the Processed Dataset
+# ==========================================
+output_path = r"C:\Users\staff\Downloads\Loan_Prediction_Cleaned.csv"
+
+data.to_csv(output_path, index=False)
+
+print("\n======================================")
+print("Feature Engineering Completed")
+print("Clean Dataset Saved Successfully")
+print("Saved at:", output_path)
+print("======================================")
